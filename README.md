@@ -4,6 +4,8 @@
 
 This repository contains questions and answers for Senior and Lead Python developers. The material is divided into several parts:
 
+> **Python version status (August 2026):** the current stable release is **Python 3.14** (latest patch: 3.14.7). **Python 3.15** is in the release-candidate phase and is scheduled for final release in October 2026. Python 3.9 reached end-of-life in October 2025, and Python 3.10 reaches end-of-life in October 2026 — actively supported versions are 3.10–3.14.
+
 ## Main Sections
 - [Python Technical Questions](#python-technical-questions)
 - [PostgreSQL Questions](postgresql.md)
@@ -45,10 +47,14 @@ This repository contains questions and answers for Senior and Lead Python develo
   * [Exception Groups (Python 3.11+)](#exception-groups-python-311)
   * [Type Parameter Syntax (Python 3.12+)](#type-parameter-syntax-python-312)
   * [Per-Interpreter GIL (Python 3.12+)](#per-interpreter-gil-python-312)
-  * [Free-Threaded Python (Python 3.13+)](#free-threaded-python-python-313-experimental)
-  * [JIT Compiler (Python 3.13+)](#jit-compiler-python-313-experimental)
+  * [Free-Threaded Python (Python 3.13+, Official since 3.14)](#free-threaded-python-python-313-official-since-314)
+  * [JIT Compiler (Python 3.13+, Experimental)](#jit-compiler-python-313-experimental)
   * [Improved Interactive Interpreter (Python 3.13+)](#improved-interactive-interpreter-python-313)
   * [Platform Support (Python 3.13+)](#platform-support-python-313)
+  * [Template Strings (Python 3.14+)](#template-strings-python-314)
+  * [Deferred Evaluation of Annotations (Python 3.14+)](#deferred-evaluation-of-annotations-python-314)
+  * [Other Python 3.14 Improvements](#other-python-314-improvements)
+  * [What's Coming in Python 3.15](#whats-coming-in-python-315)
 - [Functions in Python](#functions-in-python)
   * [When and how many times are default arguments evaluated?](#when-and-how-many-times-are-default-arguments-evaluated)
   * [`partial`](#partial)
@@ -324,7 +330,7 @@ Python raw string is created by prefixing a string literal with 'r' or 'R'. Pyth
 
 ## Unicode and ASCII strings	
 
-Unicode is international standard where a mapping of individual characters and a unique number is maintained. Python's `unicodedata` module uses the Unicode Character Database (UCD). As of Python 3.13+, Python uses **Unicode 16.0.0** (released September 2024), which contains over 154,000 characters including different scripts (English, Hindi, Chinese, Japanese, etc.) as well as emojis. These characters are each represented by a unicode code point. So unicode code points refer to actual characters that are displayed.
+Unicode is international standard where a mapping of individual characters and a unique number is maintained. Python's `unicodedata` module uses the Unicode Character Database (UCD). Python 3.13 uses Unicode 15.1.0, and as of Python 3.14+, Python uses **Unicode 16.0.0** (released September 2024), which contains over 154,000 characters including different scripts (English, Hindi, Chinese, Japanese, etc.) as well as emojis. These characters are each represented by a unicode code point. So unicode code points refer to actual characters that are displayed.
 These code points are encoded to bytes and decoded from bytes back to code points. Examples: Unicode code point for alphabet a is U+0061, emoji 🖐 is U+1F590, and for Ω is U+03A9.
 
 The main takeaways in Python are:
@@ -455,7 +461,7 @@ The Per-Interpreter GIL feature (PEP 684) allows for better concurrency by provi
 ### API Evolution:
 - **Python 3.12**: Per-interpreter GIL available only through C-API
 - **Python 3.13**: Basic `interpreters` module (from `test.support`)
-- **Python 3.14**: `InterpreterPoolExecutor` in `concurrent.futures` and full `interpreters` module (PEP 734)
+- **Python 3.14**: Stable public API — the `concurrent.interpreters` module (PEP 734) and `InterpreterPoolExecutor` in `concurrent.futures`
 
 ### Example (Python 3.14+):
 ```python
@@ -469,21 +475,29 @@ with InterpreterPoolExecutor(max_workers=4) as executor:
     results = list(executor.map(cpu_bound_task, [10**6, 10**6, 10**6, 10**6]))
 ```
 
-**Note:** For Python 3.12-3.13, you can use `from test.support import interpreters` for testing purposes, but this is not a stable public API.
+You can also manage interpreters directly:
+```python
+from concurrent import interpreters  # Python 3.14+
 
-## Free-Threaded Python (Python 3.13+, Experimental)
-Python 3.13 introduced an experimental free-threaded build mode (PEP 703) that completely disables the GIL, allowing true multi-threaded parallelism.
+interp = interpreters.create()
+interp.exec("print('hello from a subinterpreter')")
+```
+
+**Note:** For Python 3.12-3.13, you can use `from test.support import interpreters` for testing purposes, but this is not a stable public API. Since Python 3.14, use `concurrent.interpreters`.
+
+## Free-Threaded Python (Python 3.13+, Official since 3.14)
+Python 3.13 introduced an experimental free-threaded build mode (PEP 703) that completely disables the GIL, allowing true multi-threaded parallelism. In Python 3.14, free-threaded Python became **officially supported** (PEP 779) — it is no longer considered experimental, though it is still a separate build and not yet the default interpreter.
 
 ### Key Features:
 - **No GIL:** Threads can run truly in parallel on multiple CPU cores
-- **Experimental:** Available as a separate build option (`--disable-gil`)
+- **Officially supported since 3.14 (PEP 779):** still an optional, separate build (`--disable-gil`), shipped alongside the default build in official installers
 - **Thread safety:** Uses fine-grained locking instead of the GIL
-- **Compatibility:** Most pure Python code works; C extensions may need updates
+- **Compatibility:** Most pure Python code works; C extensions may need updates (the ecosystem — NumPy, and other major packages — increasingly ships free-threaded wheels)
 
 ### How to Use:
 ```bash
-# Install free-threaded Python (e.g., via pyenv or official installers)
-python3.13t  # 't' suffix indicates free-threaded build
+# Install free-threaded Python (e.g., via pyenv, uv or official installers)
+python3.14t  # 't' suffix indicates free-threaded build
 
 # Check if running free-threaded build
 import sys
@@ -491,7 +505,7 @@ print(sys._is_gil_enabled())  # False in free-threaded build
 ```
 
 ### Performance Notes:
-- Single-threaded performance may be 5-10% slower (improved in Python 3.14)
+- In Python 3.13 the single-threaded overhead was significant (tens of percent); in Python 3.14 it was reduced to roughly 5-10%
 - Multi-threaded CPU-bound workloads can see significant speedups
 - I/O-bound code benefits less (GIL was already released during I/O)
 
@@ -499,10 +513,10 @@ print(sys._is_gil_enabled())  # False in free-threaded build
 Python 3.13 added an experimental Just-In-Time (JIT) compiler (PEP 744) based on the "copy-and-patch" technique.
 
 ### Key Features:
-- Disabled by default, must be enabled at build time
-- Modest performance improvements in initial release
-- Expected to improve significantly in future versions
+- In Python 3.13 it had to be enabled at build time; since Python 3.14 the JIT ships in official Windows and macOS binaries, but is still **disabled by default** (enable at runtime with `PYTHON_JIT=1`)
+- Modest performance improvements so far; Python 3.15 brings a significant upgrade (~8-9% geometric mean speedup on x86-64 Linux)
 - Works alongside the existing specializing adaptive interpreter (PEP 659)
+- Python 3.14 also added a separate **tail-calling interpreter** build option (not a JIT), giving noticeable speedups with modern compilers
 
 ## Improved Interactive Interpreter (Python 3.13+)
 Python 3.13 includes a new REPL based on PyPy's, with:
@@ -510,10 +524,66 @@ Python 3.13 includes a new REPL based on PyPy's, with:
 - Color support for prompts and tracebacks
 - Direct support for `help`, `exit`, `quit` without parentheses
 - F1 for interactive help browsing
+- Python 3.14 adds **syntax highlighting** in the REPL (enabled by default) and auto-indentation
 
 ## Platform Support (Python 3.13+)
 - **iOS:** Now a PEP 11 supported platform (Tier 3)
-- **Android:** Now a PEP 11 supported platform (Tier 3)
+- **Android:** Now a PEP 11 supported platform (Tier 3; official binary releases started with Python 3.14)
+
+## Template Strings (Python 3.14+)
+Template strings, or t-strings (PEP 750), use the familiar f-string syntax with a `t` prefix, but instead of producing a `str` they produce a `string.templatelib.Template` object. This gives you access to the static string parts and the interpolated values *before* they are combined, enabling safe processing (HTML escaping, SQL parameterization, structured logging, DSLs).
+
+```python
+from string.templatelib import Template, Interpolation
+
+name = "World"
+tmpl: Template = t"Hello {name}!"  # not a str!
+
+parts = []
+for item in tmpl:
+    if isinstance(item, Interpolation):
+        parts.append(str(item.value).upper())  # custom processing
+    else:
+        parts.append(item)
+
+print("".join(parts))  # Hello WORLD!
+```
+
+Key difference from f-strings: an f-string eagerly evaluates into a plain string, while a t-string keeps structure and values separate, so a library can decide how to render them safely.
+
+## Deferred Evaluation of Annotations (Python 3.14+)
+Python 3.14 changed how type annotations work (PEP 649 and PEP 749): annotations are no longer evaluated eagerly at function/class definition time. Instead, they are stored in a special lazy form and only evaluated when accessed.
+
+### Key Features:
+- Forward references now generally work without string quotes and without `from __future__ import annotations`
+- No runtime cost for annotations that are never inspected
+- New `annotationlib` module for introspection, with `get_annotations()` supporting three formats: `VALUE`, `FORWARDREF`, and `STRING`
+
+```python
+class Node:
+    # Works in 3.14 without quotes and without __future__ import:
+    def add_child(self, child: Node) -> Node: ...
+
+import annotationlib
+annotationlib.get_annotations(Node.add_child, format=annotationlib.Format.VALUE)
+```
+
+## Other Python 3.14 Improvements
+- **Zstandard compression (PEP 784):** new `compression.zstd` module in the standard library (plus `compression.*` namespaces for lzma, bz2, gzip, zlib)
+- **Multiple exception types without parentheses (PEP 758):** `except TypeError, ValueError:` is now allowed (when not using `as`)
+- **Zero-overhead external debugger interface (PEP 768):** attach to a running process safely, e.g. `python -m pdb -p <PID>`, and `sys.remote_exec()`
+- **`map()` gained a `strict` parameter:** `map(func, a, b, strict=True)` raises if iterables have different lengths (like `zip(strict=True)`)
+- **Better error messages:** continued improvements to tracebacks and suggestions
+- **Color output** in `unittest`, `argparse`, `json` and `calendar` CLIs
+- **Unicode 16.0.0** database
+- **Improved asyncio introspection:** new CLI (`python -m asyncio ps <PID>` / `pstree <PID>`) for inspecting running async programs
+
+## What's Coming in Python 3.15
+Python 3.15 is scheduled for release in **October 2026** (currently in the release-candidate phase). Highlights:
+- **Explicit lazy imports (PEP 810):** `lazy import json` — module loading is deferred until first use, improving startup time for CLIs and large applications
+- **Significantly improved JIT:** ~8-9% geometric mean speedup over the standard interpreter on x86-64 Linux, ~12-13% on AArch64 macOS (over the tail-calling interpreter)
+- **Tail-calling interpreter by default** in official Windows 64-bit binaries
+- Continued free-threading (no-GIL) performance and ecosystem work
 
 # Functions in Python	
 
@@ -1546,7 +1616,7 @@ The mechanism used by the CPython interpreter to assure that only one thread exe
 
 However, some extension modules, either standard or third-party, are designed so as to release the GIL when doing computationally-intensive tasks such as compression or hashing. Also, the GIL is always released when doing I/O.
 
-Past efforts to create a "free-threaded" interpreter (one which locks shared data at a much finer granularity) have not been successful because performance suffered in the common single-processor case. It is believed that overcoming this performance issue would make the implementation much more complicated and therefore costlier to maintain.
+Past efforts to create a "free-threaded" interpreter (one which locks shared data at a much finer granularity) were not successful for a long time because performance suffered in the common single-threaded case. **This has finally changed:** Python 3.13 shipped an experimental free-threaded build (PEP 703), and since Python 3.14 the free-threaded build is officially supported (PEP 779), with single-threaded overhead reduced to roughly 5-10%. The default build still uses the GIL, but CPython is now on a path where the GIL is optional.
 
 ```python
 >>> import sys
