@@ -18,16 +18,18 @@ PostgreSQL is an open-source object-relational database system that uses and ext
 
 ## Indexing and Performance
 
-### What is a non-clustered index?
-A non-clustered index is a type of index where the order of the rows does not match the order of the actual data.
+### Does PostgreSQL have clustered indexes?
+No — this is a classic trick question with a SQL Server framing. In PostgreSQL, table data lives in an unordered **heap**, and *all* indexes are separate structures pointing into it (i.e., everything is "non-clustered"). The `CLUSTER` command physically reorders a table by an index **once**, but the ordering is not maintained on subsequent writes.
 
 ### What are the different types of indexes in PostgreSQL?
-- B-tree
+- B-tree (default; also supports covering indexes via `INCLUDE`)
 - Hash
 - GiST
 - SP-GiST
 - GIN
 - BRIN
+
+Also worth knowing: **partial indexes** (`WHERE` clause), **expression indexes** (`ON lower(email)`), and `CREATE INDEX CONCURRENTLY` for building indexes without locking writes.
 
 ### How do indexes affect performance?
 Indexes improve query performance by providing quick access paths to data, but they add overhead for write operations.
@@ -35,7 +37,7 @@ Indexes improve query performance by providing quick access paths to data, but t
 ## Data Types and Storage
 
 ### Can you store binary data in PostgreSQL?
-Yes, using either bytes or the large object feature.
+Yes, using either the `bytea` type or the large object feature.
 
 ### What are the advantages of JSONB over JSON?
 - Better performance for reading
@@ -49,7 +51,7 @@ PostgreSQL allows columns of a table to be defined as variable-length multidimen
 ## Functions and Procedures
 
 ### Explain functions in PostgreSQL
-Functions in PostgreSQL are also known as stored procedures. They can be created in several languages such as SQL, PL/pgSQL, C, Python, etc.
+Functions can be created in several languages such as SQL, PL/pgSQL, C, Python, etc. Note: since **PostgreSQL 11**, functions and procedures are *distinct* objects — `CREATE PROCEDURE` creates a procedure that is invoked with `CALL` and may control transactions (`COMMIT`/`ROLLBACK`) inside its body, which functions cannot do.
 
 ### What are the different types of functions?
 - Query functions
@@ -86,10 +88,10 @@ Using IS NULL, IS NOT NULL, COALESCE, and NULLIF functions.
 MVCC provides concurrent access to the database without unnecessary locking.
 
 ### What are the transaction isolation levels?
-- Read Uncommitted
-- Read Committed
+- Read Uncommitted (accepted syntactically, but PostgreSQL **never provides dirty reads** — it behaves exactly like Read Committed; a classic interview follow-up)
+- Read Committed (the default)
 - Repeatable Read
-- Serializable
+- Serializable (implemented via Serializable Snapshot Isolation, may abort transactions with serialization errors that the application must retry)
 
 ### How does PostgreSQL handle deadlocks?
 PostgreSQL automatically detects deadlocks and resolves them by aborting one of the transactions.
@@ -103,10 +105,9 @@ PostgreSQL automatically detects deadlocks and resolves them by aborting one of 
 - Physical backups
 
 ### How do you implement replication?
-- Streaming replication
-- Logical replication
-- Trigger-based replication
-- Slony-I
+- Streaming replication (physical, built-in)
+- Logical replication (built-in since PostgreSQL 10; replaced legacy trigger-based tools like Slony-I)
+- For high availability/failover, the modern standard stack is **Patroni** (+ etcd/Consul) for automatic failover and **PgBouncer** for connection pooling
 
 ### What is WAL (Write-Ahead Logging)?
 WAL ensures data integrity by logging changes before they are written to the database.

@@ -2,14 +2,23 @@
 
 [← Back to README](README.md)
 
+> **Python-specific tooling** (ruff, mypy, pre-commit, formatting, linting configuration) is covered in detail in [Engineering Practices → Modern Python Tooling](engineering_practices.md#modern-python-tooling-2025-2026). This file covers the process side.
+
+## Python style baseline
+
+- **PEP 8** — the style guide (naming, layout, imports); enforced mechanically with `ruff`, never in review comments.
+- **PEP 257** — docstring conventions; pick one style (Google or NumPy) per project and configure `ruff`'s `D` rules.
+- **Type hints on public APIs** — checked in CI with mypy/pyright; annotations are the living documentation of contracts.
+- **The rule of thumb:** anything a linter or formatter can enforce must be automated in pre-commit + CI, so human code review is spent on design, naming, and correctness — not on whitespace.
+
 ## Code Review Process
 
 What to know:
 
 * Code Review Best Practices (aims, feedback, reporting, periodicity, reviewers hierarchy)
-* Performs code review for "Merge/Pull requests" in GitLab
-* Performs code review with Atlassian Crucible
-* Gerrit  (online code review) https://gerrit-documentation.storage.googleapis.com/Documentation/3.5.1/intro-how-gerrit-works.html
+* Performs code review for "Merge/Pull requests" in GitLab / GitHub
+* Automated gates: required CI checks, `CODEOWNERS` for routing reviews, branch protection rules (no direct pushes to main, required approvals)
+* Gerrit (online code review) https://gerrit-review.googlesource.com/Documentation/intro-how-gerrit-works.html
 
 Gerrit is a Git server that provides access control for the hosted Git repositories and a web front-end for doing code review. Code review is a core functionality of Gerrit, but still it is optional and teams can decide to work without code review.
 

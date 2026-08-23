@@ -46,22 +46,16 @@ Infrastructure as code (IaC) is the process of managing and provisioning compute
 
 5. `Cross-team dependencies`. This is a common occurrence in large organizations. Sometimes multiple teams work on a single, complex project and they rely on each other to complete the project on time. Effective project time management can be implemented to avoid long hours.
 
-## NuGet, Artifactory and Nexus
+## Private package repositories: Artifactory, Nexus, and friends
 
-`nuget` NuGet is the package manager for .NET. The NuGet client tools provide the ability to produce and consume packages. The NuGet Gallery is the central package repository used by all package authors and consumers. https://www.nuget.org/ https://www.nuget.org/packages/python
- 
-`Artifactory`  https://www.jfrog.com/confluence/display/JFROG/PyPI+Repositories
-Artifactory fully supports PyPI repositories providing:
+For Python, the common private-index options are:
 
-- The ability to provision PyPI packages from Artifactory to the pip command line tool from all repository types.
-- Calculation of Metadata for PyPI packages hosted in Artifactory's local repositories.
-- Access to remote PyPI repositories (such as https://pypi.org/) through a Remote Repositories which provides proxy and caching functionality.
-- The ability to access multiple PyPI repositories from a single URL by aggregating them under a Virtual Repositories.
-- Compatibility with the setuptools and its predecessor distutils libraries for uploading PyPI packages.
+- **Artifactory** (JFrog) — fully supports PyPI repositories: local repositories for your own packages, remote proxies of https://pypi.org/ with caching, and virtual repositories aggregating several indexes under one URL.
+- **Nexus Repository** (Sonatype) — proxies the Python Package Index, caching packages to reduce time and bandwidth, and hosts private packages.
+- **devpi** — a lightweight open-source PyPI server and proxy, popular for smaller teams.
+- Cloud-native options: **AWS CodeArtifact**, **GCP Artifact Registry**, **Azure Artifacts**, **GitHub Packages**.
 
-`nexus`https://help.sonatype.com/repomanager3/nexus-repository-administration/formats/pypi-repositories
-
-Both Nexus Repository Manager Pro and Nexus Repository Manager OSS support proxying the Python Package Index. This allows the repository manager to take advantage of the packages in the official Python Package Index without incurring repeated downloads. This will reduce time and bandwidth usage for accessing Python packages.
+On the client side you configure the index via `--index-url`/`--extra-index-url` for pip, or `[[tool.uv.index]]` in `pyproject.toml` for uv. **Security note:** with multiple indexes, plain pip picks the highest version from *any* index, which enables dependency-confusion attacks — prefer a single virtual index or uv's default index strategy.
 
 ## Branching strategy
 
@@ -96,6 +90,12 @@ This regular integration enables developers to view each other's changes quickly
 The GitLab strategy combines feature-driven development and feature branches with issue tracking. This strategy is similar to GitHub flow yet includes environmental branches such as `development`, `pre-production`, and `production`.
 
 In GitLab Flow, development happens in one of these environmental branches, and verified and tested code is merged to other branches until they reach the production branch. Let's assume that we have the three environmental branches mentioned above. In that case, the development workflow will be:
+
+1. Feature branches are created from `development` and merged back via merge requests.
+2. When `development` is stable, it is merged into `pre-production` for staging verification.
+3. After verification, `pre-production` is merged into `production`, which triggers the deploy.
+
+**Note on naming:** the examples above use `master` as the primary branch; since 2020 the default branch on GitHub/GitLab is `main` — the strategies are identical, only the name differs.
 
 ## Continuous Integration	
 * Follows CI rules (use project's CI tools, immediately fix broken build, etc.)	

@@ -8,6 +8,8 @@ This repository contains questions and answers for Senior and Lead Python develo
 
 ## Main Sections
 - [Python Technical Questions](#python-technical-questions)
+- [Engineering Practices: tooling, packaging, web stack, Docker, security](engineering_practices.md)
+- [AI-Assisted Development with Claude Code](claude_code.md)
 - [PostgreSQL Questions](postgresql.md)
 - [Common Questions for Senior and Lead Developers](common_questions.md)
 - [Release Strategy](release_strategy.md)
@@ -16,8 +18,8 @@ This repository contains questions and answers for Senior and Lead Python develo
 
 ## Python Technical Questions
 - [Mutable and Immutable Objects](#mutable-and-immutable-objects)
-  * [Mutable objects (call by reference)](#mutable-objects-call-by-reference)
-  * [Immutable objects (pass by value)](#immutable-objects-pass-by-value)
+  * [Mutable objects](#mutable-objects)
+  * [Immutable objects](#immutable-objects)
   * [Features](#features)
   * [How objects are passed to Functions](#how-objects-are-passed-to-functions)
 - [Ways to execute Python code: exec, eval, ast, code, codeop, etc.](#ways-to-execute-python-code-exec-eval-ast-code-codeop-etc)
@@ -31,7 +33,7 @@ This repository contains questions and answers for Senior and Lead Python develo
   + [Six](#six)
 - [`deepcopy`, method `copy`, slicing, etc.](#deepcopy-method-copy-slicing-etc)
 - [OrderedDict, DefaultDict](#ordereddict-defaultdict)
-- [`hashable()`](#hashable)
+- [Hashable Objects](#hashable-objects)
 - [Strong and weak typing](#strong-and-weak-typing)
 - [Frozenset](#frozenset)
 - [Weak references](#weak-references)
@@ -43,9 +45,14 @@ This repository contains questions and answers for Senior and Lead Python develo
   * [yield](#yield)
   * [method send(), throw(), next(), close()](#method-send-throw-next-close)
   * [Coroutines](#coroutines)
+  * [asyncio Deep Dive: Tasks, TaskGroup, Cancellation](#asyncio-deep-dive-tasks-taskgroup-cancellation)
+  * [Context Variables (contextvars)](#context-variables-contextvars)
   * [Pattern Matching (Python 3.10+)](#pattern-matching-python-310)
+  * [Advanced Pattern Matching](#advanced-pattern-matching)
   * [Exception Groups (Python 3.11+)](#exception-groups-python-311)
+  * [Exception Design and Chaining](#exception-design-and-chaining)
   * [Type Parameter Syntax (Python 3.12+)](#type-parameter-syntax-python-312)
+  * [Typing Deep Dive: Protocol, TypedDict, Generics, ParamSpec](#typing-deep-dive-protocol-typeddict-generics-paramspec)
   * [Per-Interpreter GIL (Python 3.12+)](#per-interpreter-gil-python-312)
   * [Free-Threaded Python (Python 3.13+, Official since 3.14)](#free-threaded-python-python-313-official-since-314)
   * [JIT Compiler (Python 3.13+, Experimental)](#jit-compiler-python-313-experimental)
@@ -58,6 +65,7 @@ This repository contains questions and answers for Senior and Lead Python develo
 - [Functions in Python](#functions-in-python)
   * [When and how many times are default arguments evaluated?](#when-and-how-many-times-are-default-arguments-evaluated)
   * [`partial`](#partial)
+  * [`functools` Deep Dive: Caching, Dispatch, Ordering](#functools-deep-dive-caching-dispatch-ordering)
   * [Best practice decorators for functions](#best-practice-decorators-for-functions)
   * [Decorator](#decorator)
   * [Decorator factory (passing args to decorators)](#decorator-factory-passing-args-to-decorators)
@@ -84,6 +92,7 @@ This repository contains questions and answers for Senior and Lead Python develo
   * [`__getattribute__`](#__getattribute__)
   * [Name mangling](#name-mangling)
   * [@property(getter, setter, deleter)](#propertygetter-setter-deleter)
+  * [Descriptor Protocol](#descriptor-protocol)
   * [init, repr, str, cmp, new , del, hash, nonzero, unicode, class operators](#init--repr-str-cmp--new--del--hash-nonzero-unicode-class-operators)
   * [Rich comparison methods](#rich-comparison-methods)
   * [`__call__`](#__call__)
@@ -93,9 +102,11 @@ This repository contains questions and answers for Senior and Lead Python develo
   * [MRO, super](#mro-super)
   * [Mixins](#mixins)
   * [metaclass definition](#metaclass-definition)
+  * [`__init_subclass__`, `__set_name__`, `__class_getitem__`](#__init_subclass__-__set_name__-__class_getitem__)
   * [type(), isinstance(), issubclass()](#type-isinstance-issubclass)
     + [`type()` Return Value](#type-return-value)
   * [`__slots__`](#__slots__)
+  * [dataclasses vs NamedTuple vs TypedDict](#dataclasses-vs-namedtuple-vs-typeddict)
 - [Troubleshooting in Python](#troubleshooting-in-python)
   * [Types of profilers: Static and dynamic profilers](#types-of-profilers-static-and-dynamic-profilers)
     + [`trace` module](#trace-module)
@@ -107,12 +118,15 @@ This repository contains questions and answers for Senior and Lead Python develo
     + [Memory profiling](#memory-profiling)
     + [Deterministic profiling versus statistical profiling](#deterministic-profiling-versus-statistical-profiling)
     + [`pyinstrument`](#pyinstrument)
+    + [`py-spy` and `scalene`](#py-spy-and-scalene)
   * [`resource` module](#resource-module)
   * [context managers contextlib decorator, with-enabled class](#context-managers-contextlib-decorator-with-enabled-class)
+  * [`contextlib` Beyond `@contextmanager`](#contextlib-beyond-contextmanager)
 - [Unit testing in Python](#unit-testing-in-python)
   * [Mock objects](#mock-objects)
   * [Coverage](#coverage)
-  * [nosetests, doctests](#nosetests-doctests)
+  * [Testing Frameworks: pytest, unittest, doctests](#testing-frameworks-pytest-unittest-doctests)
+  * [pytest in depth: fixtures, parametrize, monkeypatch](#pytest-in-depth-fixtures-parametrize-monkeypatch)
 - [Memory management in Python](#memory-management-in-python)
   * [3 generations of GC](#3-generations-of-gc)
     + [module gc](#module-gc)
@@ -123,10 +137,10 @@ This repository contains questions and answers for Senior and Lead Python develo
   * [GIL (Definition, algorithms in 2.x and 3.x)](#gil-definition-algorithms-in-2x-and-3x)
   * [Threads(modules thread, threading; class Queue; locks)](#threadsmodules-thread-threading-class-queue-locks)
   * [Processes(multiprocessing, Process, Queue, Pipe, Value, Array, Pool, Manager)](#processesmultiprocessing-process-queue-pipe-value-array-pool-manager)
+  * [Choosing a concurrency model: a decision guide](#choosing-a-concurrency-model-a-decision-guide)
   * [How to avoid GIL restrictions (C extensions)](#how-to-avoid-gil-restrictions-c-extensions)
 - [Distributing and documentation in Python](#distributing-and-documentation-in-python)
-  * [`distutils`, setup.py](#distutils-setuppy)
-  * [code publishing](#code-publishing)
+  * [Modern packaging: pyproject.toml, PEP 517/518/621](#modern-packaging-pyprojecttoml-pep-517518621)
   * [Documentation autogeneration: sphinx, pydoc, etc.](#documentation-autogeneration-sphinx-pydoc-etc)
 - [Python and C interaction](#python-and-c-interaction)
   * [C ext API,call C from python, call python from C](#c-ext-apicall-c-from-python-call-python-from-c)
@@ -138,11 +152,11 @@ This repository contains questions and answers for Senior and Lead Python develo
 
 ## Mutable and Immutable Objects
 
-### Mutable objects (call by reference):
+### Mutable objects:
 
 list, dict, set, bytearray
 
-### Immutable objects (pass by value):
+### Immutable objects:
 - int, float, complex, string, 
 - tuple (the "value" of an immutable object can't change, but its constituent objects can.), 
 - frozenset [note: immutable version of set], 
@@ -150,18 +164,30 @@ list, dict, set, bytearray
 
 ### Features:
 
-- Python handles mutable and immutable objects differently.
-- Immutable are quicker to access than mutable objects.
 - Mutable objects are great to use when you need to change the size of the object, example list, dict etc.. Immutables are used when you need to ensure that the object you made will always stay the same.
-- Immutable objects are fundamentally expensive to "change", because doing so involves creating a copy. Changing mutable objects is cheap.
+- Immutable objects are fundamentally expensive to "change", because doing so involves creating a new object. Changing mutable objects is cheap.
+- Immutability makes objects safe to use as `dict` keys / `set` members (hashable) and safe to share between threads without locks.
 
 ### How objects are passed to Functions
 
-Its important for us to know difference between mutable and immutable types and how they are treated when passed onto functions. Memory efficiency is highly affected when the proper objects are used.
+**Python is neither call-by-value nor call-by-reference — it is "call by object reference" (also called "call by assignment"), uniformly for ALL types.** Nothing is ever copied when you pass an argument: the parameter name is simply bound to the same object the caller passed.
 
-For example if a mutable object is called by reference in a function, it can change the original variable itself. 
+The *observable* difference between mutable and immutable arguments comes from what you can do with that shared object, not from how it was passed:
 
-Hence to avoid this, the original variable needs to be copied to another variable. Immutable objects can be called by reference because its value cannot be changed anyways.
+```python
+def modify(lst, num):
+    lst.append(4)     # mutates the SHARED list - caller sees it
+    num += 1          # rebinds the LOCAL name to a new int - caller does not see it
+
+items, count = [1, 2, 3], 10
+modify(items, count)
+print(items, count)   # [1, 2, 3, 4] 10
+```
+
+- Mutating a mutable argument in place (`lst.append`) is visible to the caller, because both names refer to one object.
+- *Rebinding* the parameter (`num += 1`, `lst = []`) never affects the caller — it just points the local name elsewhere.
+
+**Why the "call by value / call by reference" framing is wrong (and a classic interview trap):** in true call-by-value the callee would get a copy (it doesn't — `id()` is identical inside and outside); in true call-by-reference the callee could rebind the caller's *variable* (it can't). If you need the caller's object protected from mutation, pass a copy explicitly (`modify(items.copy())`) or use an immutable type.
 
 ## Ways to execute Python code: exec, eval, ast, code, codeop, etc.
 
@@ -396,6 +422,140 @@ hello
 world
 ```
 
+## asyncio Deep Dive: Tasks, TaskGroup, Cancellation
+
+A coroutine object does nothing until it is awaited or wrapped in a **Task**. A `Task` is a coroutine scheduled on the event loop that runs concurrently with whatever awaits it. Everything senior-level in asyncio comes down to: who owns the task, and what happens when it fails or is cancelled.
+
+### Key Features:
+- `asyncio.TaskGroup` (3.11+) — structured concurrency: the block does not exit until every child finishes; a failure cancels the siblings.
+- `asyncio.timeout()` / `timeout_at()` (3.11+) — context-manager timeouts that apply to a whole block.
+- `CancelledError` inherits from **`BaseException`**, not `Exception` — `except Exception` must not swallow it.
+- `asyncio.to_thread()` — the only correct way to call blocking code from a coroutine.
+
+### TaskGroup instead of gather
+
+```python
+import asyncio
+
+async def fetch(name: str, delay: float) -> str:
+    await asyncio.sleep(delay)
+    if name == "b":
+        raise RuntimeError("b failed")
+    return f"{name} ok"
+
+async def main() -> None:
+    try:
+        async with asyncio.TaskGroup() as tg:
+            a = tg.create_task(fetch("a", 0.3))
+            b = tg.create_task(fetch("b", 0.1))
+    except* RuntimeError as eg:
+        print("failures:", eg.exceptions)   # a was cancelled and awaited automatically
+    else:
+        print(a.result(), b.result())
+
+asyncio.run(main())
+```
+
+**Why TaskGroup beats `asyncio.gather`:** with `gather(...)` the first exception propagates to the caller while the *other* tasks keep running unattended — you get work executing after your error handler, and "Task exception was never retrieved" warnings at shutdown. With `gather(..., return_exceptions=True)` you silently turn crashes into result values. `TaskGroup` guarantees no task outlives the block, aggregates every error into an `ExceptionGroup`, and is the async equivalent of `try/finally` for concurrency.
+
+### Cancellation is cooperative
+
+```python
+async def worker(q: asyncio.Queue[int]) -> None:
+    try:
+        while True:
+            item = await q.get()
+            await handle(item)
+    except asyncio.CancelledError:
+        await flush_partial_state()   # cleanup
+        raise                         # ALWAYS re-raise
+    finally:
+        await close_connection()
+```
+
+**Why re-raising is mandatory:** swallowing `CancelledError` makes the task "uncancellable"; `TaskGroup` and `asyncio.timeout` both rely on cancellation actually landing, so a task that eats it will hang the whole shutdown path. Since 3.11 `Task.cancelling()` / `Task.uncancel()` let frameworks distinguish *their* cancellation from an outer one — that is how `asyncio.timeout` converts a cancellation it caused into `TimeoutError` without stealing an outer cancel.
+
+### Timeouts and blocking calls
+
+```python
+async def main() -> None:
+    async with asyncio.timeout(2.0):          # applies to the whole block
+        data = await fetch_everything()
+
+    # Blocking / CPU-light-but-synchronous code must leave the loop thread:
+    rows = await asyncio.to_thread(pandas_read_csv, "big.csv")
+```
+
+**Why `asyncio.timeout` beats `wait_for`:** `wait_for` wraps a single awaitable, so composing several sequential awaits under one deadline requires arithmetic on the remaining time. `timeout()` covers a block of arbitrary code and nests correctly. **Why `to_thread` matters:** a single blocking call (`requests.get`, `time.sleep`, a sync DB driver) stalls *every* coroutine on the loop — asyncio has no preemption.
+
+### The fire-and-forget footgun
+
+```python
+_background: set[asyncio.Task] = set()
+
+task = asyncio.create_task(coro())
+_background.add(task)                       # keep a strong reference
+task.add_done_callback(_background.discard)
+```
+
+**Why:** the event loop holds only a *weak* reference to a running task. A task nobody references can be garbage-collected mid-flight and disappear without a trace. Prefer a `TaskGroup`; use this pattern only for genuinely detached work.
+
+## Context Variables (`contextvars`)
+
+`contextvars.ContextVar` (PEP 567, 3.7+) provides state that is local to a *logical flow of execution* — a thread **and** an async task — instead of being global or thread-local. It is how request IDs, tenant IDs, current user, and OpenTelemetry spans propagate through modern Python services.
+
+### Key Features:
+- Each `asyncio.Task` starts with a **copy** of the context of whoever created it, so a child task can rewrite a variable without affecting its parent or siblings.
+- `set()` returns a `Token`; `reset(token)` restores the previous value — the basis for safe nesting.
+- `contextvars.copy_context()` snapshots the current context; `ctx.run(fn)` executes a callable inside it.
+- Decimal's precision context and `asyncio`'s own machinery are built on it.
+
+```python
+import asyncio
+import contextvars
+from contextlib import contextmanager
+
+request_id: contextvars.ContextVar[str] = contextvars.ContextVar("request_id", default="-")
+
+@contextmanager
+def use_request_id(value: str):
+    token = request_id.set(value)
+    try:
+        yield
+    finally:
+        request_id.reset(token)      # restores the previous value, not a hardcoded default
+
+def log(msg: str) -> None:
+    print(f"[{request_id.get()}] {msg}")
+
+async def handler(rid: str) -> None:
+    with use_request_id(rid):
+        log("start")
+        await asyncio.sleep(0.1)     # another task runs here...
+        log("end")                   # ...and our value is still ours
+
+async def main() -> None:
+    async with asyncio.TaskGroup() as tg:
+        tg.create_task(handler("req-1"))
+        tg.create_task(handler("req-2"))
+
+asyncio.run(main())
+# [req-1] start / [req-2] start / [req-1] end / [req-2] end
+```
+
+**Why `ContextVar` instead of a module-level global:** two concurrent requests interleave on the *same thread* in asyncio, so a global is corrupted by whichever coroutine ran last. **Why not `threading.local()`:** it is per-*thread*, and every coroutine on an event loop shares one thread — all requests would see the same slot. `ContextVar` is the only construct that is correct under threads, asyncio tasks, and generators simultaneously.
+
+**Why `reset(token)` instead of `set(old_value)`:** the token records whether the variable was previously *unset*, so nesting restores the exact prior state rather than baking in a default.
+
+### Gotcha: threads do not inherit context automatically
+
+```python
+ctx = contextvars.copy_context()
+loop.run_in_executor(pool, lambda: ctx.run(blocking_work))   # explicit propagation
+```
+
+`asyncio.to_thread()` already copies the context for you; a raw `ThreadPoolExecutor.submit()` does **not** — the worker sees defaults. This is the usual reason request IDs vanish from logs the moment work is offloaded to a thread pool.
+
 ## Pattern Matching (Python 3.10+)
 Structural pattern matching with `match` and `case` statements is a powerful feature introduced in Python 3.10. It allows for more elegant and readable code when dealing with complex data structures.
 
@@ -415,6 +575,73 @@ def process_command(command):
         case _:
             return "Unknown command"
 ```
+
+## Advanced Pattern Matching
+
+Beyond sequence patterns, `match` supports class, mapping, or- and guard patterns. Used well it replaces long `isinstance` ladders in parsers, protocol handlers and event dispatchers.
+
+### Key Features:
+- **Class patterns** deconstruct objects positionally via `__match_args__` or by keyword via attribute names.
+- **Mapping patterns** match a *subset* of keys (unlike sequence patterns, which are exhaustive) and support `**rest`.
+- **Or-patterns** `|`, **guards** `if`, **as-patterns** `case Point() as p`, and value patterns via dotted names.
+- `dataclasses` and `NamedTuple` generate `__match_args__` for free.
+
+```python
+from dataclasses import dataclass
+from enum import Enum
+
+@dataclass
+class Click:
+    x: int
+    y: int
+
+@dataclass
+class KeyPress:
+    key: str
+
+class Button(Enum):
+    LEFT = "left"
+    RIGHT = "right"
+
+def handle(event: object, button: Button) -> str:
+    match event:
+        case Click(x=0, y=0):                       # keyword deconstruction
+            return "origin click"
+        case Click(x, y) if x == y:                 # positional (via __match_args__) + guard
+            return f"diagonal at {x}"
+        case Click() as c:                          # bind the whole object
+            return f"click at {c.x},{c.y}"
+        case KeyPress("q" | "Q" | "esc"):           # or-pattern inside a class pattern
+            return "quit"
+        case {"type": "resize", "w": int(w), "h": int(h)}:   # mapping + type patterns
+            return f"resize {w}x{h}"
+        case {"type": str(kind), **rest}:
+            return f"{kind} with extra keys {sorted(rest)}"
+        case _:
+            return "unknown"
+```
+
+**Why this beats an `isinstance` chain:** matching, type-checking and destructuring happen in one expression, so there is no window in which you have confirmed the type but not yet extracted the fields, and the compiler-checked structure makes a missing case visible rather than silently falling through.
+
+### The capture-vs-compare gotcha
+
+```python
+LEFT = Button.LEFT
+
+match button:
+    case LEFT:          # BUG: bare name -> ALWAYS matches and rebinds LEFT
+        ...
+    case Button.LEFT:   # correct: dotted name is a *value pattern*, compared with ==
+        ...
+```
+
+**Why this is the most important rule in PEP 634:** a bare identifier is a *capture pattern*, never a comparison. It matches anything and shadows the outer variable. Constants must be referenced through a dot (`Button.LEFT`, `config.MAX`, `Color.RED`) — this is a deliberate design choice that pushes enums and namespaced constants over loose module globals.
+
+### Structural checks worth remembering
+
+- `case [x, y]` matches any `Sequence` **except** `str`, `bytes` and `bytearray` (deliberately, so a string is not silently unpacked into characters).
+- `case {"a": 1}` succeeds on `{"a": 1, "b": 2}` — mapping patterns are non-exhaustive by design; add `**rest` when you need to see the leftovers.
+- Guards run only *after* the pattern matches, so `case Click(x, y) if expensive(x)` will not call `expensive()` for non-`Click` events.
 
 ## Exception Groups (Python 3.11+)
 Exception Groups provide a way to handle multiple exceptions simultaneously, making error handling more robust and flexible.
@@ -436,6 +663,69 @@ except* TypeError as e:
     print(f"Handled TypeError: {e}")
 ```
 
+## Exception Design and Chaining
+
+### Key Features:
+- Hierarchy: `BaseException` → `Exception`, plus `KeyboardInterrupt`, `SystemExit`, `GeneratorExit` and `asyncio.CancelledError` deliberately sitting *outside* `Exception`.
+- `raise New() from original` sets `__cause__` (explicit); an exception raised inside an `except` block automatically gets `__context__` (implicit).
+- `raise New() from None` suppresses the chain when the inner error is an implementation detail.
+- `BaseException.add_note()` (3.11+) attaches context to an exception in flight without wrapping it.
+
+```python
+class StorageError(Exception):
+    """Root of everything this package raises."""
+
+class ObjectNotFound(StorageError): ...
+class StorageUnavailable(StorageError): ...
+
+def load(key: str) -> bytes:
+    try:
+        return _backend.get(key)
+    except KeyError as exc:
+        raise ObjectNotFound(key) from exc          # __cause__: deliberate translation
+    except (ConnectionError, TimeoutError) as exc:
+        exc.add_note(f"while loading key={key!r}")  # 3.11+: context without wrapping
+        raise StorageUnavailable(key) from exc
+```
+
+**Why a package-root exception class:** callers can write `except StorageError` and stay decoupled from whether you use S3, Redis or the filesystem underneath. Without it, every consumer must catch `KeyError`, `ConnectionError`, `botocore.ClientError`… and breaks the day you swap backends.
+
+**Why `raise ... from exc` rather than a bare `raise MyError(...)`:** without `from`, the traceback still shows the original via `__context__` but prints "During handling of the above exception, another exception occurred", which reads like a bug in your handler. `from` prints "The above exception was the direct cause", stating that the translation was intentional. Use `from None` only when the inner exception leaks an implementation detail you do not want users to reason about.
+
+### Never catch what you cannot handle
+
+```python
+try:
+    run()
+except Exception:            # correct: leaves KeyboardInterrupt/SystemExit/CancelledError alone
+    log.exception("run failed")
+    raise
+```
+
+**Why `except Exception` and not bare `except:`** — a bare `except` (equivalent to `except BaseException`) swallows Ctrl-C, interpreter shutdown and, in async code, `asyncio.CancelledError`, producing processes that refuse to die and tasks that cannot be cancelled. This is precisely why `CancelledError` was moved from `Exception` to `BaseException` in Python 3.8.
+
+### Suppressing intentionally
+
+```python
+from contextlib import suppress
+
+with suppress(FileNotFoundError):
+    Path("cache.tmp").unlink()
+```
+
+**Why `suppress` beats `try/except/pass`:** it states the intent in one line at the top of the block and cannot accidentally grow a second, unrelated statement whose exceptions also get ignored — the classic way `try: ... except: pass` blocks rot.
+
+### Python 3.14 conveniences
+
+```python
+try:
+    parse(raw)
+except TypeError, ValueError:        # PEP 758: parentheses now optional (when not using `as`)
+    ...
+```
+
+Combine with `except*` and `ExceptionGroup` (see above) when several independent operations may fail at once — a single failure should still be raised as a plain exception, not artificially grouped.
+
 ## Type Parameter Syntax (Python 3.12+)
 The new type parameter syntax provides a more intuitive way to work with generic types and type parameters.
 
@@ -449,6 +739,94 @@ type List[T] = list[T]
 def first[T](items: list[T]) -> T:
     return items[0]
 ```
+
+## Typing Deep Dive: Protocol, TypedDict, Generics, ParamSpec
+
+Type hints are not enforced at runtime, but for a senior they are a design tool: they encode contracts, enable refactoring at scale, and let a checker prove things tests cannot.
+
+### Key Features:
+- `Protocol` — **structural** typing ("static duck typing"); no inheritance needed.
+- `TypedDict` — precise types for JSON-shaped dicts, with `Required`/`NotRequired` (3.11+) and `ReadOnly` (3.13+).
+- PEP 695 (3.12+) generics: `class Box[T]:` / `def f[T](...)`, with **variance inferred automatically**.
+- `Self` (3.11+), `@override` (3.12+), `ParamSpec` (3.10+), `TypeIs` (3.13+), `@overload`.
+
+### Protocol vs ABC
+
+```python
+from typing import Protocol, runtime_checkable
+
+@runtime_checkable
+class SupportsClose(Protocol):
+    def close(self) -> None: ...
+
+def shutdown(resource: SupportsClose) -> None:
+    resource.close()
+
+shutdown(open("f.txt"))   # a file satisfies the protocol; it never imported our code
+```
+
+**Why `Protocol` over an ABC here:** an ABC requires the implementer to inherit from *your* class, which is impossible for third-party types and forces a dependency edge from library to consumer. A `Protocol` inverts that: the *consumer* declares the shape it needs, so `socket`, `file`, and a test double all qualify without modification — real dependency inversion. Keep ABCs when you also want to ship shared implementation or force registration; use `Protocol` for pure interfaces. (`@runtime_checkable` only checks method *names* at runtime, not signatures — it is a convenience, not a guarantee.)
+
+### TypedDict for JSON boundaries
+
+```python
+from typing import TypedDict, NotRequired, ReadOnly   # ReadOnly: 3.13+
+
+class User(TypedDict):
+    id: ReadOnly[int]
+    name: str
+    email: NotRequired[str]
+
+def greet(u: User) -> str:
+    return f"hi {u['name']}"      # checker flags u['emial'] and u['id'] = 5
+```
+
+**Why `TypedDict` rather than `dict[str, Any]`:** you get key-name and per-key value checking with **zero runtime cost and zero shape change** — the value is still a plain `dict`, so it serialises, caches and passes to third-party libraries unchanged. Choose a `dataclass`/pydantic model instead when you need validation or behaviour.
+
+### Modern generics and `Self`
+
+```python
+class Repository[T]:                       # PEP 695 — no TypeVar import, variance inferred
+    def __init__(self) -> None:
+        self._items: list[T] = []
+
+    def add(self, item: T) -> "Self":      # `Self` types the fluent/builder pattern correctly
+        self._items.append(item)
+        return self
+```
+
+**Why `Self` instead of `-> Repository[T]`:** a subclass's `add()` would otherwise be typed as returning the *base* class, silently losing subclass methods for every caller of a chained API. **Why PEP 695 syntax:** the old `T = TypeVar("T", covariant=True)` made you declare variance by hand — the number one source of subtle typing bugs. In 3.12+ the checker infers it from usage.
+
+### Decorators that keep their signature
+
+```python
+from collections.abc import Callable
+from functools import wraps
+import time
+
+def timed[**P, R](fn: Callable[P, R]) -> Callable[P, R]:
+    @wraps(fn)
+    def inner(*args: P.args, **kwargs: P.kwargs) -> R:
+        start = time.perf_counter()
+        try:
+            return fn(*args, **kwargs)
+        finally:
+            print(f"{fn.__name__}: {time.perf_counter() - start:.3f}s")
+    return inner
+```
+
+**Why `ParamSpec` (`**P`) matters:** the pre-3.10 idiom `Callable[..., R]` erased the parameter list, so every decorated function accepted anything and typos in call sites went unchecked. `P.args`/`P.kwargs` forward the exact signature through the decorator.
+
+### Narrowing helpers
+
+```python
+from typing import TypeIs, overload
+
+def is_str_list(v: list[object]) -> TypeIs[list[str]]:
+    return all(isinstance(x, str) for x in v)
+```
+
+**Why `TypeIs` (3.13+) over `TypeGuard`:** `TypeGuard` narrows only the positive branch; `TypeIs` narrows both branches (in the `else`, the checker knows the value is *not* `list[str]`), which matches how humans read the code. Use `@overload` when a function's return type depends on argument *values* (e.g. `get(key)` vs `get(key, default)`) — it is the only way to express that without returning a union the caller must re-narrow.
 
 ## Per-Interpreter GIL (Python 3.12+)
 The Per-Interpreter GIL feature (PEP 684) allows for better concurrency by providing separate GILs for different interpreters.
@@ -589,13 +967,107 @@ Python 3.15 is scheduled for release in **October 2026** (currently in the relea
 
 ## When and how many times are default arguments evaluated?
 
-Once when program is launched
+Default argument values are evaluated **once, when the `def` statement executes** — at import time for a module-level function, but on *every execution of the enclosing function* for a nested `def`. They are then stored on the function object (`f.__defaults__`) and shared between all calls.
+
+This is why a mutable default is a classic trap:
+
+```python
+def append_to(item, target=[]):   # ONE list, created at def time, shared by all calls
+    target.append(item)
+    return target
+
+append_to(1)   # [1]
+append_to(2)   # [1, 2]  <- surprise
+
+def append_to(item, target=None): # idiomatic fix: sentinel + fresh object per call
+    if target is None:
+        target = []
+    target.append(item)
+    return target
+```
+
+**Why the sentinel idiom is preferred:** the default is now created inside the call, so every invocation gets a fresh list, while the signature still documents that the argument is optional. (Note: `dataclasses` refuses mutable defaults outright and makes you use `field(default_factory=list)` for the same reason.)
 
 ## `partial`
 
 `functools.partial(func, /, *args, **keywords)`
 
 Return a new partial object which when called will behave like func called with the positional arguments args and keyword arguments keywords. If more arguments are supplied to the call, they are appended to args. If additional keyword arguments are supplied, they extend and override keywords.
+
+## `functools` Deep Dive: Caching, Dispatch, Ordering
+
+### Key Features:
+- `@cache` (3.9+) — unbounded memoisation; `@lru_cache(maxsize=N)` — bounded.
+- `@cached_property` — computed once per *instance*, stored in the instance `__dict__`.
+- `@singledispatch` / `@singledispatchmethod` — type-based dispatch without `isinstance` chains.
+- `@total_ordering`, `reduce`, `partial`, `wraps`.
+
+```python
+from functools import cache, cached_property, singledispatch, total_ordering
+
+@cache                                   # no maxsize bookkeeping -> faster than lru_cache(None)
+def fib(n: int) -> int:
+    return n if n < 2 else fib(n - 1) + fib(n - 2)
+
+fib(200)
+fib.cache_info()      # CacheInfo(hits=..., misses=201, maxsize=None, currsize=201)
+fib.cache_clear()
+```
+
+**Why `@cache` over a hand-rolled dict:** you get `cache_info()` for hit-rate observability and `cache_clear()` for test isolation for free, and the lookup is implemented in C. **Why `@lru_cache(maxsize=...)` instead of `@cache` in a service:** `@cache` never evicts, so caching on user-controlled input is an unbounded memory leak. Arguments must also be hashable, and `f(1)` and `f(n=1)` are cached as *different* keys.
+
+### The `lru_cache`-on-methods trap
+
+```python
+class Client:
+    @cache                                  # BUG: `self` becomes part of the cache key
+    def lookup(self, key: str) -> str: ...
+```
+
+**Why this leaks:** the cache lives on the *class* and holds a strong reference to every `self` ever passed, so no `Client` instance is ever collected. Cache a module-level function that takes only the hashable inputs, or use `@cached_property` for per-instance memoisation.
+
+### `cached_property`
+
+```python
+class Report:
+    def __init__(self, rows: list[dict]) -> None:
+        self.rows = rows
+
+    @cached_property
+    def totals(self) -> dict[str, float]:
+        print("computing...")            # runs once per instance
+        return aggregate(self.rows)
+```
+
+**Why it is better than `@property` + a `self._totals` guard:** it removes the sentinel-checking boilerplate and, because it is a *non-data* descriptor, subsequent accesses bypass the descriptor entirely and read straight from `self.__dict__` — zero call overhead after the first hit. Two caveats worth stating in an interview: it needs a `__dict__` (so it is incompatible with `__slots__`), and **since Python 3.12 the internal class-wide lock was removed** — concurrent first accesses may each compute the value (one wins), which fixed a serious contention bottleneck but means the function must be side-effect-free.
+
+### `singledispatch` instead of isinstance ladders
+
+```python
+@singledispatch
+def render(value: object) -> str:
+    raise TypeError(f"cannot render {type(value).__name__}")
+
+@render.register
+def _(value: int) -> str: return f"{value:,}"
+
+@render.register
+def _(value: list) -> str: return ", ".join(render(v) for v in value)
+```
+
+**Why:** new types register themselves from *their own* module — you extend behaviour without editing the original function, which is the Open/Closed principle applied to functions. Dispatch respects the MRO, so registering `Sequence` covers subclasses automatically. Use `@singledispatchmethod` for the same effect on methods (it dispatches on the *second* argument, since the first is `self`).
+
+### `total_ordering`
+
+```python
+@total_ordering
+class Version:
+    def __init__(self, parts: tuple[int, ...]) -> None: self.parts = parts
+    def __eq__(self, other): return self.parts == other.parts
+    def __lt__(self, other): return self.parts < other.parts
+```
+
+**Why:** define `__eq__` + one ordering method and get the other three derived. Hand-written comparison methods are where inconsistent orderings (`a < b` and `b < a` both true) hide. The cost is a small performance penalty per comparison — define all six by hand only in a proven hot path.
 
 ## Best practice decorators for functions
 
@@ -655,7 +1127,7 @@ def check_email(user, etc):
 ```python
 def require_authorization(action):
     def decorate(f):
-        @functools.wraps(f):
+        @functools.wraps(f)
         def decorated(user, *args, **kwargs):
             if not is_allowed_to(user, action):
                 raise UserIsNotAuthorized(action, user)
@@ -666,7 +1138,7 @@ def require_authorization(action):
 
 ## `wraps`
 
-Preserves original name of the function
+`functools.wraps` copies the wrapped function's metadata onto the wrapper: `__module__`, `__name__`, `__qualname__`, `__doc__`, `__dict__`, and sets `__wrapped__` pointing back to the original. The `__wrapped__` attribute is what lets `inspect.signature()` and debuggers see through the decorator. Without `wraps`, every decorated function reports the wrapper's name and signature, which breaks introspection, documentation tools, and pickling.
 
 ## Decorator for class
 1. Just use inheritance
@@ -674,19 +1146,24 @@ Preserves original name of the function
 ```python
 def addID(original_class):
     orig_init = original_class.__init__
-    # Make copy of original __init__, so we can call it without recursion
+    # Keep a reference to the original __init__, so we can call it without recursion
 
     def __init__(self, id, *args, **kws):
-        self.__id = id
-        self.getId = getId
-        orig_init(self, *args, **kws) # Call the original __init__
+        self._id = id
+        orig_init(self, *args, **kws)  # Call the original __init__
 
-    original_class.__init__ = __init__ # Set the class' __init__ to the new one
+    def get_id(self):
+        return self._id
+
+    original_class.__init__ = __init__  # Replace the class' __init__ with the new one
+    original_class.get_id = get_id
     return original_class
 
 @addID
 class Foo:
     pass
+
+Foo(42).get_id()   # 42
 ```
 3. Use metaclass
 
@@ -708,8 +1185,10 @@ class UpperAttrMetaclass(type):
             attr if attr.startswith("__") else attr.upper(): v
             for attr, v in attrs.items()
         }
-        return type(clsname, bases, uppercase_attrs)
+        return super().__new__(cls, clsname, bases, uppercase_attrs)
 ```
+
+Note: returning `type(clsname, bases, uppercase_attrs)` instead of `super().__new__(...)` is a classic bug — the produced class would be an instance of plain `type`, not of the metaclass, so the metaclass would not apply to subclasses.
 
 The main use case for a metaclass is creating an API. A typical example of this is the Django ORM.
 
@@ -772,7 +1251,7 @@ reduce(lambda x, y: x + y, [1, 2, 3, 4, 5], 100)  # (100 + 1 + 2 + 3 + 4 + 5), 1
 ```
 
 
-##Function attributes
+## Function attributes
 ```python
 def func():
     pass
@@ -986,7 +1465,7 @@ getting `bamf`
 
 ## Name mangling
 
-In name mangling process any identifier with two leading underscore and one trailing underscore is textually replaced with `_classname__identifier` where classname is the name of the current class. It means that any identifier of the form `__geek` (at least two leading underscores or at most one trailing underscore) is replaced with `_classname__geek`, where classname is the current class name with leading underscore(s) stripped.
+In the name mangling process, any identifier with **two or more leading underscores and at most one trailing underscore** is textually replaced with `_classname__identifier`, where classname is the current class name with leading underscore(s) stripped. So `__geek` and `__geek_` are mangled, while dunders like `__geek__` are **not** (that's why `__init__` works unmangled). Mangling happens at compile time inside the class body only — its purpose is to avoid accidental clashes in subclasses, not to provide real privacy.
 
 ```python
 class Student:
@@ -1025,13 +1504,82 @@ p.name = 'John'
 del p.name
 ```
 
+## Descriptor Protocol
+
+A **descriptor** is any object that defines `__get__`, `__set__` or `__delete__` and is stored **as a class attribute**. Descriptors are the mechanism behind `property`, `classmethod`, `staticmethod`, `functools.cached_property`, and every ORM field you have ever used — understanding them means you stop writing five nearly-identical properties per class.
+
+### Key Features:
+- **Data descriptor** — defines `__set__` and/or `__delete__`. Takes priority *over* the instance `__dict__`.
+- **Non-data descriptor** — defines only `__get__`. The instance `__dict__` wins over it.
+- Attribute lookup order in `object.__getattribute__`: **type data descriptor → instance `__dict__` → type non-data descriptor / plain class attribute → `__getattr__`**.
+- `__set_name__(self, owner, name)` (3.6+) is called automatically at class creation, so a descriptor learns the attribute name it was assigned to — no more `Field("price")` duplication.
+
+```python
+class Positive:
+    """One reusable validator instead of a hand-written property per field."""
+
+    def __set_name__(self, owner: type, name: str) -> None:
+        self._name = f"_{name}"          # storage slot on the instance
+
+    def __get__(self, obj, objtype=None):
+        if obj is None:                  # accessed on the class: Order.price
+            return self
+        return getattr(obj, self._name)
+
+    def __set__(self, obj, value: float) -> None:
+        if value <= 0:
+            raise ValueError(f"{self._name[1:]} must be positive, got {value!r}")
+        setattr(obj, self._name, value)  # plain attribute -> no recursion
+
+
+class Order:
+    quantity = Positive()
+    price = Positive()
+
+    def __init__(self, quantity: int, price: float) -> None:
+        self.quantity = quantity   # routed through Positive.__set__
+        self.price = price
+
+Order(1, -5)   # ValueError: price must be positive, got -5
+```
+
+**Why this is better than three `@property` blocks:** the validation rule lives in exactly one place. Adding a tenth validated field costs one line, and `__set_name__` removes the string-duplication bug where a copy-pasted property writes to the wrong backing attribute.
+
+### `property` demystified
+
+`property` is *just* a data descriptor written in C. A minimal pure-Python equivalent:
+
+```python
+class my_property:
+    def __init__(self, fget): self.fget = fget
+    def __get__(self, obj, objtype=None):
+        return self if obj is None else self.fget(obj)
+    def __set__(self, obj, value):
+        raise AttributeError("read-only")   # having __set__ is what makes it a data descriptor
+```
+
+**Why the distinction matters:** because `property` defines `__set__`, you cannot shadow it by writing to `instance.__dict__` — assignment always goes through the setter. `functools.cached_property` deliberately omits `__set__`, so after the first call it writes the computed value into the instance `__dict__` and every later access hits the *dict*, not the descriptor. That is the entire caching trick, and it is also why `cached_property` cannot be used on a class with `__slots__` (no `__dict__` to cache into).
+
+### Functions are non-data descriptors
+
+```python
+class A:
+    def method(self): ...
+
+A.method            # plain function
+A().method          # <bound method A.method of ...>  <- function.__get__ produced this
+A.__dict__["method"].__get__(A(), A)   # exactly what attribute access does
+```
+
+**Why you should know this:** bound methods are not stored anywhere — they are created on every attribute access by `function.__get__`. That explains why `self` is passed implicitly, why `staticmethod` (which returns the underlying function unchanged) exists, and why storing `obj.method` in a long-lived callback list keeps `obj` alive.
+
 ## init,  repr, str, cmp,  new , del,  hash, nonzero, unicode, class operators
 
 - `__init__` The task of constructors is to initialize(assign values) to the data members of the class when an object of class is created.
 - `repr()` The repr() function returns a printable representation of the given object.
 - The `__str__` method in Python represents the class objects as a string – it can be used for classes. The __str__ method should be defined in a way that is easy to read and outputs all the members of the class. This method is also used as a debugging tool when the members of a class need to be checked.
 - `__cmp__` is no longer used.
-- `__mew__` Whenever a class is instantiated `__new__` and `__init__` methods are called. `__new__` method will be called when an object is created and `__init__` method will be called to initialize the object.
+- `__new__` Whenever a class is instantiated `__new__` and `__init__` methods are called. `__new__` method will be called when an object is created and `__init__` method will be called to initialize the object.
 ```python
 class A(object):
     def __new__(cls):
@@ -1196,9 +1744,73 @@ my_object = MyClass()
 
 MyClass = type('MyClass', (), {})
 ```
+
+## `__init_subclass__`, `__set_name__`, `__class_getitem__`
+
+PEP 487 added two hooks that cover most of what people used to write metaclasses for — with none of the metaclass-conflict problems.
+
+### Key Features:
+- `__init_subclass__(cls, **kwargs)` — implicitly a classmethod; runs on the **subclass** at class-creation time. Accepts keyword arguments passed in the class header.
+- `__set_name__(self, owner, name)` — called on every class-body attribute that defines it, right after the class is created.
+- `__class_getitem__(cls, item)` — makes `MyClass[int]` valid, powering generic aliases.
+
+### Subclass registration and validation without a metaclass
+
+```python
+class Plugin:
+    registry: dict[str, type["Plugin"]] = {}
+
+    def __init_subclass__(cls, /, name: str | None = None, abstract: bool = False, **kw):
+        super().__init_subclass__(**kw)          # cooperative: never break the chain
+        if abstract:
+            return
+        if not hasattr(cls, "run"):
+            raise TypeError(f"{cls.__name__} must define run()")
+        Plugin.registry[name or cls.__name__.lower()] = cls
+
+
+class Csv(Plugin, name="csv"):
+    def run(self) -> None: ...
+
+class Broken(Plugin):          # TypeError raised at import time, not at first use
+    pass
+```
+
+**Why this beats a metaclass:** a metaclass changes the *type* of the class, so any class combining two libraries that each ship a metaclass hits `TypeError: metaclass conflict`. `__init_subclass__` is a plain hook on a normal class — it composes freely via `super()`, is readable to anyone who knows classmethods, and still gives you the two things metaclasses were used for: registration and structural validation at import time (fail fast, not on first request).
+
+**Why `super().__init_subclass__(**kw)` is mandatory:** several classes in an MRO may each define the hook; skipping the `super()` call silently disables every one below yours.
+
+### `__set_name__` for self-naming attributes
+
+```python
+class Field:
+    def __set_name__(self, owner: type, name: str) -> None:
+        self.name = name
+        self.owner = owner
+
+class Model:
+    title = Field()      # title.name == "title", no string duplication
+```
+
+**Why:** before 3.6 a descriptor could not know its own name, so every ORM/serialiser made you write `title = Field("title")` — a permanent source of copy-paste bugs where the label and the attribute drifted apart. The hook also receives `owner`, which lets an attribute register itself with the class that contains it.
+
+### `__class_getitem__` for subscriptable classes
+
+```python
+from types import GenericAlias
+
+class Result:
+    def __class_getitem__(cls, item):
+        return GenericAlias(cls, item)      # Result[int] is now a valid annotation
+
+def parse(raw: str) -> Result[int]: ...
+```
+
+**Why return `types.GenericAlias` rather than just `cls`:** the alias preserves the parameter for introspection (`__origin__`/`__args__`), so `typing.get_type_hints` and runtime validators can read it. In practice, inheriting `Generic[T]` — or, in 3.12+, simply writing `class Result[T]:` — does this for you; implement `__class_getitem__` by hand only for non-generic runtime factories such as `Annotated`-style DSLs.
+
 ## type(), isinstance(), issubclass()
 
-###`type()` Parameters
+### `type()` Parameters
 The `type()` function either takes a single object parameter.
 
 Or, it takes 3 parameters
@@ -1227,13 +1839,8 @@ The syntax of issubclass() is:
 
 The special attribute `__slots__` allows you to explicitly state which instance attributes you expect your object instances to have, with the expected results:
 
-- faster attribute access.
-- space savings in memory.
-
-The space savings is from Storing value references in slots instead of __dict__.
-
-Denying `__dict__` and `__weakref__` creation if parent classes deny them and you declare `__slots__`.
-Quick Caveats
+- **space savings in memory** — the dominant, measurable win (roughly half the size per instance): value references are stored in fixed slots instead of a per-instance `__dict__`.
+- slightly faster attribute access.
 
 ```python
 class Base:
@@ -1242,6 +1849,59 @@ class Base:
 class Right(Base):
     __slots__ = 'baz', 
 ```
+
+### Caveats worth knowing:
+- **No `__dict__`** → no ad-hoc attributes at runtime, and `functools.cached_property` does not work (it needs a `__dict__` to cache into).
+- **A subclass that omits `__slots__` silently regains `__dict__`**, erasing the memory savings for the whole hierarchy — every class in the chain must declare slots.
+- **Multiple inheritance from two classes with non-empty slots raises `TypeError`** (conflicting instance layouts).
+- **`__weakref__` must be declared explicitly** in `__slots__` if you need weak references to instances.
+- With dataclasses, use `@dataclass(slots=True)` (3.10+) instead of writing `__slots__` by hand.
+
+## dataclasses vs NamedTuple vs TypedDict
+
+Picking the right record type is a daily senior decision. All four options below generate boilerplate for you; they differ in mutability, memory, and whether validation happens.
+
+| | `@dataclass` | `NamedTuple` | `TypedDict` | pydantic `BaseModel` |
+|---|---|---|---|---|
+| Runtime type | new class | `tuple` subclass | plain `dict` | new class |
+| Mutable | yes (`frozen=True` opts out) | no | yes | yes |
+| Validates input | **no** | no | no | **yes** |
+| Iterable / unpackable | no | yes | keys only | no |
+| Memory | low (`slots=True`) | lowest | dict-sized | highest |
+| Best for | domain objects, config | fixed coordinate-like records, hot loops | JSON at API boundaries | untrusted external input |
+
+```python
+from dataclasses import dataclass, field, replace
+
+@dataclass(slots=True, frozen=True, kw_only=True)
+class Money:
+    amount: int
+    currency: str = "USD"
+    tags: list[str] = field(default_factory=list)   # never `tags: list = []`
+
+m = Money(amount=100)
+m2 = replace(m, amount=200)     # copy.replace(m, amount=200) also works in 3.13+
+```
+
+**Why `slots=True` (3.10+):** it removes the per-instance `__dict__`, cutting memory roughly in half and speeding up attribute access — the single highest-value flag for objects you create in bulk. **Why `frozen=True`:** immutable instances are hashable and safe to share across threads and caches; mutation becomes an explicit `replace()`, which makes accidental aliasing bugs impossible. **Why `kw_only=True` (3.10+):** positional construction of a 6-field record is unreadable and silently breaks when you reorder fields; it also removes the "non-default argument follows default argument" restriction. **Why `field(default_factory=list)`:** a bare `[]` default would be evaluated once at class-definition time and shared by every instance — the same trap as mutable default arguments (dataclasses actually raise `ValueError` for this, unlike plain functions).
+
+```python
+from typing import NamedTuple
+
+class Point(NamedTuple):
+    x: float
+    y: float
+
+px, py = Point(1.0, 2.0)      # unpacks like a tuple; works in match statements
+```
+
+**Why `NamedTuple` over a frozen dataclass:** it *is* a tuple, so it unpacks, indexes, compares structurally, and is the cheapest option in a tight loop. **Why that is also its weakness:** because `Point(1, 2) == (1, 2)` is `True`, a `NamedTuple` silently compares equal to unrelated tuples and can be passed where a plain tuple is expected — accidental coupling a dataclass would have caught.
+
+### Where validation belongs
+
+`@dataclass` performs **no** type checking: `Money(amount="oops")` constructs happily. That is correct for data you produced yourself, and wrong for data crossing a trust boundary.
+
+**Rule of thumb:** parse untrusted input (HTTP bodies, config files, message payloads) with a validating model — pydantic v2, whose core is in Rust and is typically an order of magnitude faster than v1 — then convert to plain dataclasses for your domain layer. `attrs` remains the richest option (validators, converters, `__attrs_post_init__`) and is what `dataclasses` was distilled from; reach for it when you need per-field converters that stdlib dataclasses do not provide. Keeping validation at the edge means the core of your application never re-checks the same invariants.
 
 # Troubleshooting in Python	
 ## Types of profilers: Static and dynamic profilers
@@ -1264,7 +1924,7 @@ If you're a beginner to tracing, I recommend you start simple with trace.
 
 ### application performance monitoring (APM) tools that fit
 
-Datadog in my production
+Commercial and open-source APM tools (Datadog, New Relic, Sentry Performance, Grafana Cloud) collect latency, error rates, and distributed traces from production. The modern vendor-neutral approach is to instrument once with **OpenTelemetry** and export to whichever backend you use — this avoids rewriting instrumentation when switching vendors.
 
 ### What part of the code should I profile?
 Now let's delve into profiling specifics. The term "profiling" is mainly used for performance testing, and the purpose of performance testing is to find bottlenecks by doing deep analysis. So you can use tracing tools to help you with profiling. Recall that tracing is when software developers log information about a software execution. Therefore, logging performance metrics is also a way to perform profiling analysis.
@@ -1296,19 +1956,23 @@ cProfile.run('re.compile("foo|bar")')
 ```
 
 ### Memory profiling
-Another common component to profile is the memory usage. The purpose is to find memory leaks and optimize the memory usage in your Python programs. In terms of generic Python options, the most recommended tools for memory profiling for Python 3 are the `pympler` and the `objgraph` libraries.
+Another common component to profile is the memory usage. The purpose is to find memory leaks and optimize the memory usage in your Python programs. The modern toolkit:
+
+- **`tracemalloc`** (stdlib, 3.4+) — snapshots of Python allocations with tracebacks to the allocating line; zero dependencies, safe to use in production diagnostics.
+- **memray** (Bloomberg) — the current gold standard: tracks native (C-extension) allocations too, produces flamegraphs, and can attach to a running process.
+- `objgraph` — still handy for answering "what is keeping this object alive" via reference graphs.
 
 ```python
->>> from pympler import classtracker
->>> tr = classtracker.ClassTracker()
->>> tr.track_class(Document)
->>> tr.create_snapshot()
->>> create_documents()
->>> tr.create_snapshot()
->>> tr.stats.print_summary()
-active 1.42 MB average pct
-Document 1000 195.38 KB 200 B 13%
+import tracemalloc
+
+tracemalloc.start()
+run_workload()
+snapshot = tracemalloc.take_snapshot()
+for stat in snapshot.statistics("lineno")[:10]:
+    print(stat)               # top-10 allocation sites with sizes
 ```
+
+**Why `tracemalloc`/memray over older tools (`pympler`):** they attribute memory to the exact source line (not just to a class), cover C-extension allocations (memray), and are actively maintained.
 
 ### Deterministic profiling versus statistical profiling
 When we do profiling, it means we need to monitor the execution. That in itself may affect the underlying software being monitored. Either we monitor all the function calls and exception events, or we use random sampling and deduce the numbers. The former is known as deterministic profiling, and the latter is statistical profiling. Of course, each method has its pros and cons. Deterministic profiling can be highly precise, but its extra overhead may affect its accuracy. Statistical profiling has less overhead in comparison, with the drawback being lower precision.
@@ -1317,6 +1981,13 @@ cProfile, which I covered earlier, uses deterministic profiling. Let's look at a
 
 ### `pyinstrument`
 Pyinstrument differentiates itself from other typical profilers in two ways. First, it emphasizes that it uses statistical profiling instead of deterministic profiling. It argues that while deterministic profiling can give you more precision than statistical profiling, the extra precision requires more overhead. The extra overhead may affect the accuracy and lead to optimizing the wrong part of the program. Specifically, it states that using deterministic profiling means that "code that makes a lot of Python function calls invokes the profiler a lot, making it slower." This is how results get distorted and the wrong part of the program gets optimized.
+
+### `py-spy` and `scalene`
+
+Two statistical profilers every senior should know in 2026:
+
+- **py-spy** — attaches to a **running process by PID** with no code changes and negligible overhead (`py-spy top --pid 1234`, `py-spy record -o profile.svg --pid 1234`). It is the standard answer to "production is slow *right now*, what is it doing?" — something cProfile cannot do because it requires restarting the program under the profiler.
+- **scalene** — profiles CPU, memory and GPU together, and separates time spent in Python from time spent in native code, so you immediately see whether the fix is "vectorise this loop" or "the bottleneck is inside numpy already".
 
 ## `resource` module	
 
@@ -1401,6 +2072,80 @@ async def main():
 asyncio.run(main())
 ```
 
+## `contextlib` Beyond `@contextmanager`
+
+### Key Features:
+- `ExitStack` / `AsyncExitStack` — compose a *dynamic* number of context managers.
+- `suppress`, `closing`, `nullcontext`, `redirect_stdout`, `chdir` (3.11+).
+- `@asynccontextmanager` and `aclosing` (3.10+) for async resources.
+- `ContextDecorator` — one object usable as both `with` block and decorator.
+
+### `ExitStack`: when the number of resources is not known statically
+
+```python
+from contextlib import ExitStack
+
+def merge(paths: list[str], out: str) -> None:
+    with ExitStack() as stack:
+        files = [stack.enter_context(open(p)) for p in paths]
+        target = stack.enter_context(open(out, "w"))
+        stack.callback(print, "done")          # arbitrary cleanup, LIFO order
+        for f in files:
+            target.writelines(f)
+```
+
+**Why `ExitStack` rather than nesting `with`:** a nested `with` requires you to know the count at compile time. The naive alternative — a `try/finally` closing a list of handles — leaks every already-opened file if `open()` raises halfway through the list. `ExitStack` unwinds in LIFO order and, crucially, guarantees that *everything entered so far* is exited even if a later `enter_context` blows up.
+
+```python
+stack = ExitStack()
+conn = stack.enter_context(connect())
+closer = stack.pop_all().close      # hand ownership to the caller
+```
+
+**Why `pop_all()` matters:** it is the standard idiom for a factory that opens several resources and must either return them all successfully or clean up everything on partial failure — the Python answer to RAII-style transactional acquisition.
+
+### Async composition
+
+```python
+from contextlib import AsyncExitStack, asynccontextmanager, aclosing
+
+@asynccontextmanager
+async def session(url: str):
+    conn = await connect(url)
+    try:
+        yield conn
+    finally:
+        await conn.close()          # runs even if the body raises or is cancelled
+
+async def main(urls: list[str]) -> None:
+    async with AsyncExitStack() as stack:
+        conns = [await stack.enter_async_context(session(u)) for u in urls]
+        ...
+
+async def consume(agen):
+    async with aclosing(agen) as it:      # 3.10+
+        async for item in it:
+            if item is None:
+                break                      # early exit still runs the generator's finally
+```
+
+**Why `aclosing` is not optional:** breaking out of an `async for` leaves the async generator suspended, and its cleanup runs only when the loop's shutdown hooks eventually finalise it — non-deterministically, possibly after the event loop is closed. `aclosing` calls `aclose()` immediately, making resource release deterministic. The same applies to sync generators via `contextlib.closing`.
+
+### Small but high-value helpers
+
+```python
+from contextlib import nullcontext, chdir, suppress
+
+cm = open(path) if path else nullcontext(sys.stdout)   # one code path, not two
+with cm as fh:
+    fh.write("data")
+
+with chdir("/tmp"):        # 3.11+, restores the previous cwd (NOT thread-safe: cwd is per-process)
+    ...
+```
+
+**Why `nullcontext`:** it removes the duplicated `with`-block/no-`with`-block branches that otherwise appear whenever a resource is optional, keeping a single tested code path.
+
 # Unit testing in Python	
 ## Mock objects
 
@@ -1458,7 +2203,7 @@ And there are MagicMock and Async Mock as well.
 
 ## Coverage
 
-Coverage.py is one of the most popular code coverage tools for Python. It uses code analysis tools and tracing hooks provided in Python standard library to measure coverage. It runs on major versions of CPython, PyPy, Jython and IronPython. You can use Coverage.py with both unittest and Pytest.
+Coverage.py is one of the most popular code coverage tools for Python. It uses code analysis tools and tracing hooks provided in Python standard library to measure coverage. Current versions support CPython 3.9+ and PyPy3. You can use Coverage.py with both unittest and pytest.
 
 ## Testing Frameworks: pytest, unittest, doctests
 
@@ -1505,6 +2250,117 @@ The doctest module searches for pieces of text that look like interactive Python
 
 `python example.py -v`
 
+## pytest in depth: fixtures, parametrize, monkeypatch
+
+`assert`-based tests are the smallest part of what pytest gives you. The parts that matter at senior level are dependency injection via fixtures, and test data generation.
+
+### Fixtures: setup/teardown as dependency injection
+
+```python
+# conftest.py - fixtures here are visible to every test in the directory tree
+import pytest
+from myapp.db import Session, create_engine
+
+@pytest.fixture(scope="session")
+def engine():
+    eng = create_engine("postgresql+psycopg://localhost/test")
+    yield eng                     # everything after yield is teardown
+    eng.dispose()
+
+@pytest.fixture
+def session(engine):              # fixtures depend on other fixtures
+    with engine.connect() as conn:
+        tx = conn.begin()
+        yield Session(bind=conn)
+        tx.rollback()             # every test gets a clean DB, cheaply
+
+@pytest.fixture
+def user(session):
+    return session.add(User(email="a@b.c"))
+```
+
+```python
+def test_user_can_login(user, session):   # just name what you need
+    assert login(user.email, "pw") is not None
+```
+
+**Why fixtures over `unittest.setUp()`:** `setUp` runs for *every* test in the class whether it is needed or not, and sharing setup between classes requires inheritance. Fixtures are requested by name, composed like a dependency graph, cached per scope (`function`/`class`/`module`/`session`), and their teardown is guaranteed even on failure. Expensive resources get `scope="session"`; per-test isolation is done with a transaction rollback rather than by rebuilding the world.
+
+### Parametrize instead of loops
+
+```python
+@pytest.mark.parametrize(
+    ("raw", "expected"),
+    [
+        ("1h", 3600),
+        ("90m", 5400),
+        pytest.param("", 0, marks=pytest.mark.xfail(reason="issue #412")),
+    ],
+)
+def test_parse_duration(raw, expected):
+    assert parse_duration(raw) == expected
+```
+
+**Why not a `for` loop inside one test:** a loop stops at the first failure and reports one test. Parametrize produces N independent test IDs, so the report tells you *exactly which inputs* broke and you can rerun one with `pytest -k "90m"`.
+
+### Built-in fixtures worth knowing
+
+```python
+def test_writes_report(tmp_path):             # real temp dir, auto-cleaned
+    write_report(tmp_path / "r.csv")
+    assert (tmp_path / "r.csv").exists()
+
+def test_reads_config(monkeypatch):           # auto-undone after the test
+    monkeypatch.setenv("API_URL", "http://x")
+    monkeypatch.setattr("myapp.clock.now", lambda: FIXED_TIME)
+
+def test_logs_failure(caplog):
+    with caplog.at_level("ERROR"):
+        do_thing()
+    assert "payment declined" in caplog.text
+```
+
+**Why `monkeypatch` over `unittest.mock.patch` for env vars and attributes:** it is undone automatically at teardown even if the test raises, and it reads as one line instead of a decorator stack. Use `mock.patch`/`MagicMock` when you need call assertions; use `monkeypatch` for state.
+
+**Patch where it is *used*, not where it is defined.** `from x import get` binds a new name, so `patch("x.get")` has no effect on the caller — patch `mymodule.get`.
+
+### Async tests
+
+```python
+# pyproject.toml
+[tool.pytest.ini_options]
+asyncio_mode = "auto"          # plain `async def test_...` works, no decorator needed
+
+@pytest.fixture
+async def client():
+    async with AsyncClient(transport=ASGITransport(app), base_url="http://t") as c:
+        yield c
+
+async def test_health(client):
+    assert (await client.get("/health")).status_code == 200
+```
+
+`pytest-asyncio` (or `anyio`'s plugin, if you support trio too) supplies the event loop. Testing an ASGI app through `ASGITransport` exercises the real routing/middleware stack **without opening a socket**, so tests stay fast and port-conflict-free.
+
+### Beyond unit tests
+
+- **hypothesis** — property-based testing: state the invariant, let it search for the counterexample and shrink it. Finds the edge cases your example-based tests never thought of.
+- **testcontainers** — spin up a real PostgreSQL/Redis in Docker for integration tests. A fake that behaves differently from the real DB is worse than no test.
+- **time-machine** / **freezegun** — freeze the clock instead of sleeping.
+- **respx** / **responses** — stub HTTP at the transport layer, not by mocking your own code.
+- **pytest-xdist** (`-n auto`) — parallelism; it also *proves* your tests are independent.
+
+### Configuration that prevents rot
+
+```toml
+[tool.pytest.ini_options]
+addopts = "--strict-markers --strict-config -ra"
+filterwarnings = ["error"]     # a DeprecationWarning today is a broken build next year
+testpaths = ["tests"]
+```
+
+**On coverage:** treat it as a *detector of untested areas*, not a target. Enforce a floor (`--cov-fail-under=80`) so it cannot fall, but remember 100% line coverage says nothing about whether the assertions are meaningful — use `--cov-branch` and review the tests themselves.
+
 # Memory management in Python
 
 ## 3 generations of GC
@@ -1521,6 +2377,8 @@ del y
 sys.getrefcount(x)
 2
 ```
+
+**Note (Python 3.12+):** PEP 683 introduced **immortal objects** — `None`, `True`, `False`, small integers, and interned strings now have a fixed huge sentinel refcount that never changes, so `sys.getrefcount(None)` no longer returns a meaningful number. Under the free-threaded build, refcounts are biased/deferred, so the exact values in examples like the above are not reproducible there either.
 
 The main problem with the reference counting scheme is that it does not handle reference cycles. For instance, consider this code:
 ```python
@@ -1631,7 +2489,7 @@ Past efforts to create a "free-threaded" interpreter (one which locks shared dat
 
 The problem in this mechanism was that most of the time the CPU-bound thread would reacquire the GIL itself before other threads could acquire it. This was researched by David Beazley and visualizations can be found here.
 
-This problem was fixed in Python 3.2 in 2009 by Antoine Pitrou who added a mechanism of looking at the number of GIL acquisition requests by other threads that got dropped and not allowing the current thread to reacquire GIL before other threads got a chance to run.
+This problem was fixed in Python 3.2 (released in 2011; the new GIL was implemented in 2009) by Antoine Pitrou who added a mechanism of looking at the number of GIL acquisition requests by other threads that got dropped and not allowing the current thread to reacquire GIL before other threads got a chance to run.
 
 
 ## Threads(modules thread, threading; class Queue; locks)
@@ -1672,19 +2530,19 @@ from time import sleep
 
 def cube(x):
     result = x * x * x
-    print(f'Куб числа {x}: {result}')
+    print(f'Cube of {x}: {result}')
     return result
 
 if __name__ == '__main__':
     values = [3, 4, 5, 6]
     
     with ThreadPoolExecutor(max_workers=5) as executor:
-        # Используем map для применения функции cube ко всем значениям
+        # map applies cube to every value, preserving input order
         results = list(executor.map(cube, values))
     
-    print("\nРезультаты:")
+    print("\nResults:")
     for value, result in zip(values, results):
-        print(f"Куб числа {value}: {result}")
+        print(f"Cube of {value}: {result}")
 
 
 ```
@@ -1695,9 +2553,9 @@ Operations associated with `queue.Queue` are:
 - `empty()` – Return True if the queue is empty, False otherwise.
 - `full()` – Return True if there are maxsize items in the queue. If the queue was initialized with maxsize=0 (the default), then full() never returns True.
 - `get()` – Remove and return an item from the queue. If queue is empty, wait until an item is available.
-- `get_nowait()` – Return an item if one is immediately available, else raise QueueEmpty.
+- `get_nowait()` – Return an item if one is immediately available, else raise `queue.Empty` (`asyncio.Queue` raises `QueueEmpty`).
 - `put(item)` – Put an item into the queue. If the queue is full, wait until a free slot is available before adding the item.
-- `put_nowait(item)` – Put an item into the queue without blocking. If no free slot is immediately available, raise QueueFull.
+- `put_nowait(item)` – Put an item into the queue without blocking. If no free slot is immediately available, raise `queue.Full` (`asyncio.Queue` raises `QueueFull`).
 - `qsize()` – Return the number of items in the queue.
 
 ## Processes(multiprocessing, Process, Queue, Pipe, Value, Array, Pool, Manager)	
@@ -1759,13 +2617,55 @@ if __name__ == '__main__':
     main()
 ```
 
-`pipes` — Interface to shell pipelines. The pipes module defines a class to abstract the concept of a pipeline — a sequence of converters from one file to another.
+**Note:** the old `pipes` module (shell-pipeline helper) was deprecated by PEP 594 and **removed in Python 3.13** — use `subprocess` instead. It was unrelated to `multiprocessing.Pipe()`, which is a two-way IPC channel between processes and remains fully supported.
 
+## Choosing a concurrency model: a decision guide
+
+Knowing *how* threads, processes, asyncio and subinterpreters work is table stakes. The senior question is *which one to reach for*, and being able to justify it.
+
+| Model | Best for | Parallel CPU? | Cost per unit | Data sharing | Main risk |
+|---|---|---|---|---|---|
+| `asyncio` | Many concurrent I/O ops (HTTP, sockets, DB) | No | ~KB, thousands OK | Same memory, single thread | One blocking call stalls everything |
+| `threading` / `ThreadPoolExecutor` | Blocking I/O, libs that release the GIL (numpy, zlib, DB drivers) | Partly | ~8MB stack | Same memory + locks | Race conditions, deadlocks |
+| `multiprocessing` / `ProcessPoolExecutor` | Pure-Python CPU-bound work | Yes | ~30-50MB + startup | Pickle / shared memory | Serialization cost, harder debugging |
+| Subinterpreters (`concurrent.interpreters`, 3.14+) | CPU-bound with lighter isolation than processes | Yes | Lighter than a process | Explicit channels/queues | Young ecosystem, C extensions may not support it |
+| Free-threaded build (3.14+, official) | CPU-bound shared-state work in threads | Yes | Thread-cheap | Same memory + locks | Needs FT-compatible wheels; ~5-10% single-thread overhead |
+| External queue (Celery, arq, Dramatiq) | Work that outlives a request | Yes (many hosts) | A whole worker | Broker | Operational complexity |
+
+### The decision path
+
+1. **Is the work I/O-bound?** → `asyncio` if the whole stack is async-capable, otherwise threads. Adding processes to an I/O-bound workload buys nothing but memory usage.
+2. **Is it CPU-bound in pure Python?** → processes today. Consider the free-threaded build or subinterpreters if all your dependencies have wheels for it.
+3. **Is it CPU-bound inside C/Rust (numpy, polars, pillow, cryptography)?** → **threads are fine**, because those libraries release the GIL. Reaching for processes here is a common over-engineering.
+4. **Does the caller need the result now?** If not, it belongs in a task queue, not in the web process.
+
+### The rule that breaks async services
+
+Never call blocking code from a coroutine. One `requests.get()` or `time.sleep()` inside the event loop stops *every* concurrent request on that worker, which looks like a mysterious latency spike under load rather than an obvious error.
+
+```python
+import asyncio
+
+# WRONG - blocks the entire event loop
+def handler():
+    data = requests.get(url).json()          # blocking library
+
+# RIGHT - use an async client
+async def handler():
+    async with httpx.AsyncClient() as c:
+        data = (await c.get(url)).json()
+
+# RIGHT - unavoidable blocking work goes to a thread
+async def handler():
+    return await asyncio.to_thread(legacy_blocking_call, arg)
+```
+
+**Always bound your concurrency.** `asyncio.Semaphore(20)` around outbound calls prevents your own service from DoS-ing a downstream one. "Unbounded fan-out" is the single most common async production incident.
 
 ## How to avoid GIL restrictions (C extensions)
 
-Only C treads:
-```javascript
+Only C threads:
+```c
 #include "Python.h"
 ...
 PyObject *pyfunc(PyObject *self, PyObject *args)
@@ -1794,72 +2694,93 @@ Mixing C and Python:
 
 
 # Distributing and documentation in Python	
-## `distutils`, setup.py	
 
-**`distutils` has been removed in Python 3.12.** It was deprecated in Python 3.10 and finally removed. See PEP 632 for more information.
+## Modern packaging: `pyproject.toml`, PEP 517/518/621
 
-Most Python users will not want to use this module directly, but instead use the cross-version tools maintained by the Python Packaging Authority. In particular, `setuptools` is an enhanced alternative to distutils that provides:
+**`distutils` was removed in Python 3.12** (deprecated in 3.10, see PEP 632). `setup.py` is no longer a required file, and running `python setup.py install` has been deprecated since 2021 — it invokes the build system as a script instead of through the standardised interface.
 
-- support for declaring project dependencies
+Three PEPs define modern packaging:
 
-- additional mechanisms for configuring which files to include in source releases (including plugins for integration with version control systems)
+- **PEP 518** — `[build-system]`: declare *what builds your package*, in an isolated environment. Before it, `setup.py` had to import `setuptools` that might not be installed yet — a bootstrap paradox that broke CI constantly.
+- **PEP 517** — a build *backend* interface, so `pip`/`build`/`uv` can build any project without knowing anything about setuptools. This is what made Rust and C++ backends possible.
+- **PEP 621** — `[project]`: static, declarative metadata. Tools can read your name, version and dependencies **without executing arbitrary Python**, which is both faster and safer.
 
-- the ability to declare project "entry points", which can be used as the basis for application plugin systems
-
-- the ability to automatically generate Windows command line executables at installation time rather than needing to prebuild them
-
-`Setuptools` is a fully-featured, actively-maintained, and stable library designed to facilitate packaging Python projects.
-
-For basic use of setuptools, you will need a `pyproject.toml` with the exact following info, which declares you want to use setuptools to package your project:
+### A complete modern package
 
 ```toml
+# pyproject.toml - the only required config file
 [build-system]
-requires = ["setuptools"]
-build-backend = "setuptools.build_meta"
-```
-Then, you will need a setup.cfg or setup.py to specify your package information, such as metadata, contents, dependencies, etc. Here we demonstrate the minimum
+requires = ["hatchling"]
+build-backend = "hatchling.build"
 
-```python
-from setuptools import setup
+[project]
+name = "mypackage"
+version = "1.2.0"                    # or use dynamic versioning
+description = "Does one thing well"
+readme = "README.md"
+requires-python = ">=3.12"
+license = "MIT"                      # PEP 639 SPDX expression
+authors = [{ name = "Jane Dev", email = "jane@example.com" }]
+dependencies = ["httpx>=0.28"]
+classifiers = ["Programming Language :: Python :: 3.14"]
 
-setup(
-    name='mypackage',
-    version='0.0.1',
-    packages=['mypackage'],
-    install_requires=[
-        'requests',
-        'importlib; python_version == "2.6"',
-    ],
-)
-```
+[project.urls]
+Source = "https://github.com/me/mypackage"
 
-```python
-~/mypackage/
-    pyproject.toml
-    setup.cfg # or setup.py
-    mypackage/__init__.py
+[project.scripts]
+mycli = "mypackage.cli:main"         # generates a console entry point on install
 ```
 
 ```
-python -m build
-```
-
-## code publishing
-
-https://packaging.python.org/en/latest/tutorials/packaging-projects/
-
-```python
-packaging_tutorial/
-├── LICENSE
+mypackage/
 ├── pyproject.toml
 ├── README.md
-├── setup.cfg
+├── LICENSE
 ├── src/
-│   └── example_package/
+│   └── mypackage/
 │       ├── __init__.py
-│       └── example.py
+│       └── core.py
 └── tests/
 ```
+
+**Why the `src/` layout:** without it, `import mypackage` in your tests picks up the *source directory* on `sys.path`, not the installed package. Missing files in your wheel then pass CI and fail for users. With `src/`, tests can only import what was actually installed.
+
+### Choosing a build backend
+
+| Backend | Use when |
+|---|---|
+| **hatchling** | Pure-Python default; fast, zero boilerplate, good VCS versioning |
+| **setuptools** | Legacy projects, complex `MANIFEST.in`, existing C extensions |
+| **flit-core** | Tiny single-module libraries |
+| **maturin** | The package is a Rust (PyO3) extension |
+| **scikit-build-core** | C/C++ with CMake |
+| **uv_build** | uv-native projects wanting the fastest build path |
+
+### Building and publishing
+
+```bash
+uv build            # or: python -m build  -> dist/*.whl and dist/*.tar.gz
+uv publish          # or: twine upload dist/*
+```
+
+Always ship **both** artifacts: the **wheel** (`.whl`) installs without a build step, and the **sdist** (`.tar.gz`) lets distributions and exotic platforms rebuild from source.
+
+**Publish from CI with Trusted Publishing, not an API token.** PyPI supports OIDC: your GitHub Actions workflow exchanges a short-lived identity token for an upload token, so there is no long-lived secret in the repo to leak.
+
+```yaml
+# .github/workflows/release.yml
+permissions:
+  id-token: write            # required for OIDC - no PYPI_TOKEN secret needed
+jobs:
+  publish:
+    environment: pypi
+    steps:
+      - uses: actions/checkout@v5
+      - run: pipx run build
+      - uses: pypa/gh-action-pypi-publish@release/v1
+```
+
+Publish to **TestPyPI** first; a version number on PyPI can be yanked but **never reused**. For compiled packages, build wheels for every platform with **cibuildwheel**, and prefer the **stable ABI** (`abi3`) so one wheel covers many Python versions instead of one wheel each.
 
 ## Documentation autogeneration: sphinx, pydoc, etc.
 
@@ -1869,7 +2790,7 @@ packaging_tutorial/
 
 `pdoc`, a simple Python 3 command line tool and library to auto-generate API documentation for Python modules. Supports Numpydoc / Google-style docstrings, doctests, reST directives, PEP 484 type annotations, custom templates ...
 
-`pdoc3`, a fork of pdoc for Python 3 with support for Numpydoc / Google-style docstrings, doctests, LaTeX math, reST directives, PEP 484 type annotations, custom templates ...
+`MkDocs` + `mkdocstrings` — the most common modern choice for project documentation: Markdown-based, renders API docs from docstrings and type annotations, with the popular Material theme. (Note: the `pdoc3` fork is stale — prefer plain `pdoc` or mkdocstrings.)
 
 `PyDoc`, a documentation browser (in HTML) and/or an off-line reference manual. Also in the standard library as pydoc.
 
@@ -1882,7 +2803,7 @@ packaging_tutorial/
 ## C ext API,call C from python, call python from C	
 
 Simple C function:
-```javascript
+```c
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
@@ -1896,7 +2817,7 @@ int main() {
 ```
 And make it python-compatible:
 
-```javascript
+```c
 #include <Python.h>
 
 static PyObject *method_fputs(PyObject *self, PyObject *args) {
@@ -2065,5 +2986,5 @@ Just read their names and short descriptions at least. You would be surprised ho
 - `time`, 
 - `datetime`, 
 - `argparse` Parser for command-line options, arguments and sub-commands https://docs.python.org/3/library/argparse.html
-- `optparse` Deprecated since version 3.2: The optparse module is deprecated and will not be developed further; development will continue with the argparse module.
+- `optparse` Soft-deprecated: no longer slated for removal (the docs relaxed the deprecation in 3.13), but not developed further — use `argparse` for new code.
 
