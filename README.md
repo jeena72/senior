@@ -384,10 +384,33 @@ To master `yield`, you must understand that when you call the function, the code
 def double_number(number):
     while True:
         number *= 2
-        number = yield number
+        number = yield number  # yield sends current 'number' out; assignment receives next value from send()
+                                 # e.g., yield 10 sends 10, then gen.send(7) resumes and number becomes 7
+
+# Usage example:
+gen = double_number(5)
+print(next(gen))           # Initialize: runs number=5, *=2 -> 10, yields 10, pauses
+print(gen.send(7))         # Resumes: yield expression gets 7, so number=7, *=2 -> 14, yields 14
+print(gen.send(3))         # Resumes: yield gets 3, number=3, *=2 -> 6, yields 6
 ```
 
-`throw()` - throw custom exception. Useful for databases:
+`next()` - retrieves the next value from a generator. Equivalent to `send(None)`.
+
+```python
+def countdown(n):
+    while n > 0:
+        yield n
+        n -= 1
+
+# Usage example:
+gen = countdown(3)
+print(next(gen))           # 3
+print(next(gen))           # 2
+print(next(gen))           # 1
+# next(gen) would raise StopIteration
+```
+
+`throw()` - throw custom exception into generator. Useful for databases:
 
 ```python
 def add_to_database(connection_string):
@@ -405,6 +428,33 @@ def add_to_database(connection_string):
     finally:
         cursor.execute('ABORT')
         db.close()
+
+# Usage example:
+gen = add_to_database("connection_string")
+next(gen)  # Initialize
+try:
+    gen.throw(CommitException)  # Throws exception into generator
+except StopIteration:
+    pass
+```
+
+`close()` - stops a generator and raises `GeneratorExit` inside it.
+
+```python
+def resource_generator():
+    try:
+        yield 1
+        yield 2
+        yield 3
+    finally:
+        print("Cleanup: Resource released")
+
+# Usage example:
+gen = resource_generator()
+print(next(gen))           # 1
+print(next(gen))           # 2
+gen.close()                # Output: Cleanup: Resource released
+# next(gen) would raise StopIteration
 ```
 
 ## Coroutines
@@ -2447,13 +2497,11 @@ gc.get_objects(generation=1)
 The garbage collector module provides the Python function is_tracked(obj), which returns the current tracking status of the object.
 
 ### Which type of objects are tracked?
- For this reason some additional machinery is needed to clean these reference cycles between objects once they become unreachable. This is the cyclic garbage collector, usually called just Garbage Collector (GC), even though reference counting is also a form of garbage collection.
+As a general rule, instances of atomic types aren't tracked and instances of non-atomic types (containers, user-defined objects, etc.) are. However, CPython applies some type-specific optimizations to reduce the garbage collector footprint of simple containers. Examples of built-in containers that may be untracked, or can become untracked after a collection, include:
 
-As a general rule, instances of atomic types aren't tracked and instances of non-atomic types (containers, user-defined objects…) are. However, some type-specific optimizations can be present in order to suppress the garbage collector footprint of simple instances. Some examples of native types that benefit from delayed tracking:
+- Tuples that contain only untracked objects (for example, integers, strings, or recursively such tuples) can become untracked after a GC pass.
 
-Tuples containing only immutable objects (integers, strings etc, and recursively, tuples of immutable objects) do not need to be tracked
-
-Dictionaries containing only immutable objects also do not need to be tracked
+- Dictionaries whose keys and values are all atomic objects can remain untracked.
 
 ## recommendations for GC usage	
 
